@@ -2,6 +2,8 @@ let assert = require("assert")
 let Contract = require("./contract")
 
 describe("test vault contract", function(){
+  var hashToTrace = null
+
   it("should create successfully", function(done){
     const file = "./contracts/024_vault.bbo"
     let testContract = new Contract(this.web3, file)
@@ -27,35 +29,22 @@ describe("test vault contract", function(){
   })
 
   it("should unvault", function(done){
-    this.contractInstance.methods.unvault(100, this.hotWallet)
-    .send({
-      from: this.primaryAccount,
-      gas: 6721975
-    })
-    .on("reciept", () => {done()})
-    .on("error", done)
-  })
-
-  it("should redeem", function(done){
-    this.contractInstance.methods.redeem()
-     .send({
-       from: this.primaryAccount,
-       gas: 6721975
-     })
-    .then(()=>{
+    this.contractInstance.methods.unvault(100, this.hotWallet).send({from: this.primaryAccount, gas: 6721975}, function(err, tx) {
+      console.log(tx)
+      hashToTrace = tx
       done()
     })
   })
 
-  it("should deny recover from non-secondary key", function(done){
-    this.contractInstance.methods.recover()
-    .call({
-      gas: 6721975,
-      from: this.primaryAccount
-    })
-    .then((result)=>{
-      console.log(result)
-      done()
+  it("should debug", function(done){
+    this.web3.currentProvider.sendAsync({
+      jsonrpc: "2.0",
+      method: "debug_traceTransaction",
+      params: [hashToTrace, []],
+      id: new Date().getTime()
+    }, function(err, response) {
+      console.log(response.result.structLogs)
     })
   })
+
 })
